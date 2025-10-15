@@ -9,8 +9,10 @@ import com.ch0pp4.webcrawler.utils.loadPage
 
 class WebCrawlerHelper(
     private val url: String,
+    private val listener: CrawlerListener? = null,
     private val webView: WebView
 ) {
+    private var isRedirect = false
 
     @SuppressLint("SetJavaScriptEnabled")
     fun init(): WebView =
@@ -47,8 +49,9 @@ class WebCrawlerHelper(
                     println("++++++++++onPageFinished+++++++++++")
                     println(url)
 
-                    // 강제 리다이렉션 대응
-                    val jsUaOverride = """
+                    if (!isRedirect) {
+                        // 강제 리다이렉션 대응
+                        val jsUaOverride = """
                             Object.defineProperty(navigator, 'userAgent', {
                                 get: function() { 
                                     return '$userAgent'; 
@@ -56,12 +59,14 @@ class WebCrawlerHelper(
                             });
                         """.trimIndent()
 
-                    webView.evaluateJavascript(jsUaOverride) { result ->
-                        println("++++++++++UA+++++++++++")
-                        println(result)
+                        webView.evaluateJavascript(jsUaOverride) { result ->
+                            println("++++++++++UA+++++++++++")
+                            println(result)
+                        }
                     }
 
-                    val jsCode = """
+                    if (isRedirect) {
+                        val jsCode = """
                             const ulElement = document.querySelector('ul.prdList');
                             if (ulElement == null) return "";
                             
@@ -70,11 +75,15 @@ class WebCrawlerHelper(
                             return firstLi ? firstLi.id : "";
                         """.trimIndent()
 
-                    webView.evaluateJavascript("(function() {$jsCode; })();") {
-                        println("+++++evaluateJavascript+++++")
-                        println(it)
-                        println("+++++evaluateJavascript+++++")
+                        webView.evaluateJavascript("(function() {$jsCode; })();") {
+                            println("+++++evaluateJavascript+++++")
+                            println(it)
+                            println("+++++evaluateJavascript+++++")
+                            listener?.getResult(it)
+                        }
                     }
+
+                    isRedirect = true
                 }
             }
 
@@ -82,4 +91,8 @@ class WebCrawlerHelper(
         }.also {
             it.loadPage(url)
         }
+
+    interface CrawlerListener {
+        fun getResult(result: String)
+    }
 }
