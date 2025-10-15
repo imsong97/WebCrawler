@@ -49,8 +49,9 @@ class WebCrawlerHelper(
                     println("++++++++++onPageFinished+++++++++++")
                     println(url)
 
-                    // 강제 리다이렉션 대응
-                    val jsUaOverride = """
+                    if (!isRedirect) {
+                        // 강제 리다이렉션 대응
+                        val jsUaOverride = """
                             Object.defineProperty(navigator, 'userAgent', {
                                 get: function() { 
                                     return '$userAgent'; 
@@ -58,12 +59,14 @@ class WebCrawlerHelper(
                             });
                         """.trimIndent()
 
-                    webView.evaluateJavascript(jsUaOverride) { result ->
-                        println("++++++++++UA+++++++++++")
-                        println(result)
+                        webView.evaluateJavascript(jsUaOverride) { result ->
+                            println("++++++++++UA+++++++++++")
+                            println(result)
+                        }
                     }
 
-                    val jsCode = """
+                    if (isRedirect) {
+                        val jsCode = """
                             const ulElement = document.querySelector('ul.prdList');
                             if (ulElement == null) return "";
                             
@@ -72,12 +75,15 @@ class WebCrawlerHelper(
                             return firstLi ? firstLi.id : "";
                         """.trimIndent()
 
-                    webView.evaluateJavascript("(function() {$jsCode; })();") {
-                        println("+++++evaluateJavascript+++++")
-                        println(it)
-                        println("+++++evaluateJavascript+++++")
-                        listener?.getResult(it)
+                        webView.evaluateJavascript("(function() {$jsCode; })();") {
+                            println("+++++evaluateJavascript+++++")
+                            println(it)
+                            println("+++++evaluateJavascript+++++")
+                            listener?.getResult(it)
+                        }
                     }
+
+                    isRedirect = true
                 }
             }
 
