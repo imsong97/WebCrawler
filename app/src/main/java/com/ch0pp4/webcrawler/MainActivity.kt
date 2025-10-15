@@ -32,7 +32,12 @@ fun DameWebView() {
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { context ->
-            WebCrawlerHelper(url, WebView(context)).init()
+            val listener = object : WebCrawlerHelper.CrawlerListener {
+                override fun getResult(result: String) {
+
+                }
+            }
+            WebCrawlerHelper(url = url, listener = listener, webView = WebView(context)).init()
         },
         update = { webView ->
             if (webView.url != url) {

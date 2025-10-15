@@ -9,8 +9,10 @@ import com.ch0pp4.webcrawler.utils.loadPage
 
 class WebCrawlerHelper(
     private val url: String,
+    private val listener: CrawlerListener? = null,
     private val webView: WebView
 ) {
+    private var isRedirect = false
 
     @SuppressLint("SetJavaScriptEnabled")
     fun init(): WebView =
@@ -74,6 +76,7 @@ class WebCrawlerHelper(
                         println("+++++evaluateJavascript+++++")
                         println(it)
                         println("+++++evaluateJavascript+++++")
+                        listener?.getResult(it)
                     }
                 }
             }
@@ -82,4 +85,8 @@ class WebCrawlerHelper(
         }.also {
             it.loadPage(url)
         }
+
+    interface CrawlerListener {
+        fun getResult(result: String)
+    }
 }
