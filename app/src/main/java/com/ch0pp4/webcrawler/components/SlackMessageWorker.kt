@@ -19,7 +19,7 @@ class SlackMessageWorker (
     override fun doWork(): Result =
         Single.fromCallable {
                 // TODO url 분리
-                WebCrawlerHelper("https://damestore.com/product/outlet.html?cate_no=141", null, WebView(context))
+                WebCrawlerHelper("https://damestore.com/product/outlet.html?cate_no=141", null, WebView(context)).init()
             }
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(Schedulers.io())
