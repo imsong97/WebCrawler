@@ -32,8 +32,8 @@ fun DameWebView() {
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { context ->
-            val listener = object : WebCrawlerHelper.CrawlerListener {
-                override fun getResult(result: String) {
+            val listener = object : WebCrawlerHelper.CrawlerCallback {
+                override fun getTagId(id: String) {
 
                 }
             }
