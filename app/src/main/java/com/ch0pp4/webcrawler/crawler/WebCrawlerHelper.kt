@@ -50,9 +50,8 @@ class WebCrawlerHelper(
                     println("++++++++++onPageFinished+++++++++++")
                     println(url)
 
-                    if (!isRedirect) {
-                        // 강제 리다이렉션 대응
-                        val jsUaOverride = """
+                    // 강제 리다이렉션 대응
+                    val jsUaOverride = """
                             Object.defineProperty(navigator, 'userAgent', {
                                 get: function() { 
                                     return '$userAgent'; 
@@ -60,14 +59,11 @@ class WebCrawlerHelper(
                             });
                         """.trimIndent()
 
-                        webView.evaluateJavascript(jsUaOverride) { result ->
-                            println("++++++++++UA+++++++++++")
-                            println(result)
-                        }
+                    webView.evaluateJavascript(jsUaOverride) { result ->
+                        println("++++++++++UA+++++++++++")
+                        println(result)
                     }
-
-                    if (isRedirect) {
-                        val jsCode = """
+                    val jsCode = """
                             const ulElement = document.querySelector('ul.prdList');
                             if (ulElement == null) return "";
                             
@@ -76,38 +72,34 @@ class WebCrawlerHelper(
                             return firstLi ? firstLi.id : "";
                         """.trimIndent()
 
-                        webView.evaluateJavascript("(function() {$jsCode; })();") {
-                            println("+++++evaluateJavascript+++++")
-                            println(it)
-                            println("+++++evaluateJavascript+++++")
-                            listener?.getTagId(it)
+                    webView.evaluateJavascript("(function() {$jsCode; })();") {
+                        println("+++++evaluateJavascript+++++")
+                        println(it)
+                        println("+++++evaluateJavascript+++++")
+                        listener?.getTagId(it)
 
-                            // TODO 로직 분리?
-                            val pref = SlackPreferenceWrapper(context)
-                            val existId = pref.getExistId()
-                            val newId = it.ifEmpty { existId }
+                        // TODO 로직 분리?
+                        val pref = SlackPreferenceWrapper(context)
+                        val existId = pref.getExistId()
+                        val newId = it.ifEmpty { existId }
 
-
-                            when {
-                                existId.isEmpty() && newId.isNotEmpty() -> {
-                                    // 최초 등록
-                                    pref.setIsNewFlag(false)
-                                    pref.setId(newId)
-                                }
-                                existId.isNotEmpty() && newId != existId -> {
-                                    // 바뀔경우
-                                    pref.setIsNewFlag(true)
-                                    pref.setId(newId)
-                                }
-                                existId.isNotEmpty() && newId == existId -> {
-                                    // 그대로
-                                    pref.setIsNewFlag(false)
-                                }
+                        when {
+                            existId.isEmpty() && newId.isNotEmpty() -> {
+                                // 최초 등록
+                                pref.setIsNewFlag(false)
+                                pref.setId(newId)
+                            }
+                            existId.isNotEmpty() && newId != existId -> {
+                                // 바뀔경우
+                                pref.setIsNewFlag(true)
+                                pref.setId(newId)
+                            }
+                            existId.isNotEmpty() && newId == existId -> {
+                                // 그대로
+                                pref.setIsNewFlag(false)
                             }
                         }
                     }
-
-                    isRedirect = true
                 }
             }
 
