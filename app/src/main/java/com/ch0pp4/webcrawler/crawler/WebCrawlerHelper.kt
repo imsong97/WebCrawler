@@ -5,11 +5,12 @@ import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.ch0pp4.slack.local.SlackPreferenceWrapper
 import com.ch0pp4.webcrawler.utils.loadPage
 
 class WebCrawlerHelper(
     private val url: String,
-    private val listener: CrawlerListener? = null,
+    private val listener: CrawlerCallback? = null,
     private val webView: WebView
 ) {
     private var isRedirect = false
@@ -79,7 +80,30 @@ class WebCrawlerHelper(
                             println("+++++evaluateJavascript+++++")
                             println(it)
                             println("+++++evaluateJavascript+++++")
-                            listener?.getResult(it)
+                            listener?.getTagId(it)
+
+                            // TODO 로직 분리?
+                            val pref = SlackPreferenceWrapper(context)
+                            val existId = pref.getExistId()
+                            val newId = it.ifEmpty { existId }
+
+
+                            when {
+                                existId.isEmpty() && newId.isNotEmpty() -> {
+                                    // 최초 등록
+                                    pref.setIsNewFlag(false)
+                                    pref.setId(newId)
+                                }
+                                existId.isNotEmpty() && newId != existId -> {
+                                    // 바뀔경우
+                                    pref.setIsNewFlag(true)
+                                    pref.setId(newId)
+                                }
+                                existId.isNotEmpty() && newId == existId -> {
+                                    // 그대로
+                                    pref.setIsNewFlag(false)
+                                }
+                            }
                         }
                     }
 
@@ -92,7 +116,7 @@ class WebCrawlerHelper(
             it.loadPage(url)
         }
 
-    interface CrawlerListener {
-        fun getResult(result: String)
+    interface CrawlerCallback {
+        fun getTagId(id: String)
     }
 }
