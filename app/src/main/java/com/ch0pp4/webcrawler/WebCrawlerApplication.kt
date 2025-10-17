@@ -35,8 +35,8 @@ class WebCrawlerApplication : Application() {
         }
 
         val calendar = Calendar.getInstance().apply {
-            add(Calendar.HOUR_OF_DAY, 1)
-            set(Calendar.MINUTE, 0)
+//            add(Calendar.HOUR_OF_DAY, 1)
+            add(Calendar.MINUTE, 30)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }
