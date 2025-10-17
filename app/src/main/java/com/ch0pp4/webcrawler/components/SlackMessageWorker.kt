@@ -2,7 +2,7 @@ package com.ch0pp4.webcrawler.components
 
 import android.content.Context
 import android.webkit.WebView
-import androidx.work.Worker
+import androidx.work.RxWorker
 import androidx.work.WorkerParameters
 import com.ch0pp4.slack.SlackRepository
 import com.ch0pp4.slack.local.SlackPreferenceWrapper
@@ -10,21 +10,25 @@ import com.ch0pp4.webcrawler.crawler.WebCrawlerHelper
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
-import kotlinx.coroutines.runBlocking
 
 class SlackMessageWorker (
     private val context: Context,
     private val workerParameters: WorkerParameters
-) : Worker(context, workerParameters) {
+) : RxWorker(context, workerParameters) {
 
-    override fun doWork(): Result =
+    override fun createWork(): Single<Result> =
         Single.create { emitter ->
-            val listener = object : WebCrawlerHelper.CrawlerCallback {
-                override fun getTagId(id: String) {
-                    emitter.onSuccess(id)
+            try {
+                val listener = object : WebCrawlerHelper.CrawlerCallback {
+                    override fun getTagId(id: String) {
+                        emitter.onSuccess(id)
+                    }
                 }
+                WebCrawlerHelper(listener, WebView(context)).initDameWeb()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emitter.onError(Throwable("Crawling Error"))
             }
-            WebCrawlerHelper(listener, WebView(context)).initDameWeb()
         }.subscribeOn(AndroidSchedulers.mainThread())
         .observeOn(Schedulers.io())
         .map {
@@ -38,6 +42,9 @@ class SlackMessageWorker (
                 "++same id : $id++"
             }
         }
+        .onErrorReturn {
+            it.message
+        }
         .flatMap {
             SlackRepository.instance?.sendSlackMessage(it) ?: Single.just(false)
         }
@@ -48,5 +55,4 @@ class SlackMessageWorker (
                 Result.failure()
             }
         }
-        .blockingGet() ?: Result.success()
 }
