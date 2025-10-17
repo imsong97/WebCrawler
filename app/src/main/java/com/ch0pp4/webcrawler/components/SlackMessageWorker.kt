@@ -10,6 +10,7 @@ import com.ch0pp4.webcrawler.crawler.WebCrawlerHelper
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.runBlocking
 
 class SlackMessageWorker (
     private val context: Context,
@@ -17,32 +18,35 @@ class SlackMessageWorker (
 ) : Worker(context, workerParameters) {
 
     override fun doWork(): Result =
-        Single.fromCallable {
-                // TODO url 분리
-                WebCrawlerHelper("https://damestore.com/product/outlet.html?cate_no=141", null, WebView(context)).init()
+        Single.create { emitter ->
+            val listener = object : WebCrawlerHelper.CrawlerCallback {
+                override fun getTagId(id: String) {
+                    emitter.onSuccess(id)
+                }
             }
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(Schedulers.io())
-            .map {
-                val pref = SlackPreferenceWrapper(context)
-                val isNew = pref.getIsNewFlag()
-                val id = pref.getExistId().ifEmpty { "value is empty" }
+            WebCrawlerHelper(listener, WebView(context)).initDameWeb()
+        }.subscribeOn(AndroidSchedulers.mainThread())
+        .observeOn(Schedulers.io())
+        .map {
+            val pref = SlackPreferenceWrapper(context)
+            val isNew = pref.getIsNewFlag()
+            val id = pref.getExistId().ifEmpty { "value is empty" }
 
-                if (isNew) {
-                    "‼️New product is Detected‼️\n++new id : $id++"
-                } else {
-                    "++same id : $id++"
-                }
+            if (isNew) {
+                "‼️New product is Detected‼️\n++new id : $id++"
+            } else {
+                "++same id : $id++"
             }
-            .flatMap {
-                SlackRepository.instance?.sendSlackMessage(it) ?: Single.just(false)
+        }
+        .flatMap {
+            SlackRepository.instance?.sendSlackMessage(it) ?: Single.just(false)
+        }
+        .map {
+            if (it) {
+                Result.success()
+            } else {
+                Result.failure()
             }
-            .map {
-                if (it) {
-                    Result.success()
-                } else {
-                    Result.failure()
-                }
-            }
-            .blockingGet() ?: Result.success()
+        }
+        .blockingGet() ?: Result.success()
 }
