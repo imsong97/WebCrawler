@@ -55,7 +55,7 @@ internal class SlackAPI {
     }
 
     interface API {
-        @POST("T07C8GL2B9A/B09LGRBTVDH/{hooksKey}")
+        @POST("T07C8GL2B9A/B09M13F6F0D/{hooksKey}")
         fun sendSlackMessage(
             @Path("hooksKey") key: String,
             @Body entity: SendSlackEntity

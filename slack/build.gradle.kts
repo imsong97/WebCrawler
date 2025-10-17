@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -13,7 +16,11 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
 
-        buildConfigField("String", "HOOKS_KEY", "\"FlsBnzvDYGdSsjpEzWeMh5m4\"")
+        // Build config
+        val properties = Properties().apply {
+            this.load(FileInputStream(rootProject.file("local.properties")))
+        }
+        buildConfigField("String", "HOOKS_KEY", "${properties["HOOKS_KEY"]}")
     }
 
     buildTypes {
