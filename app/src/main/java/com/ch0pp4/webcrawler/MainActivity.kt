@@ -37,7 +37,7 @@ fun DameWebView() {
 
                 }
             }
-            WebCrawlerHelper(url = url, listener = listener, webView = WebView(context)).init()
+            WebCrawlerHelper(listener = listener, webView = WebView(context)).initDameWeb()
         },
         update = { webView ->
             if (webView.url != url) {

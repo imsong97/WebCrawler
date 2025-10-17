@@ -9,49 +9,37 @@ import com.ch0pp4.slack.local.SlackPreferenceWrapper
 import com.ch0pp4.webcrawler.utils.loadPage
 
 class WebCrawlerHelper(
-    private val url: String,
     private val listener: CrawlerCallback? = null,
     private val webView: WebView
 ) {
     private var isRedirect = false
 
-    @SuppressLint("SetJavaScriptEnabled")
-    fun init(): WebView =
-        webView.apply {
-            val userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+    fun initDameWeb(): WebView {
+        val url = "https://damestore.com/product/outlet.html?cate_no=141"
+        val userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+        val clientObj = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): Boolean {
+                var newUrl = request?.url.toString()
 
-            settings.userAgentString = userAgent
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.useWideViewPort = true
-            settings.loadWithOverviewMode = true
-            settings.builtInZoomControls = true
-            settings.displayZoomControls = false
-            settings.setSupportZoom(true)
-
-            webViewClient = object : WebViewClient() {
-                override fun shouldOverrideUrlLoading(
-                    view: WebView?,
-                    request: WebResourceRequest?
-                ): Boolean {
-                    var newUrl = request?.url.toString()
-
-                    if (newUrl.contains("m.damestore.com")) {
-                        newUrl = newUrl.replace("m.damestore.com", "www.damestore.com")
-                    }
-
-                    view?.loadPage(newUrl)
-                    return true
+                if (newUrl.contains("m.damestore.com")) {
+                    newUrl = newUrl.replace("m.damestore.com", "www.damestore.com")
                 }
 
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    super.onPageFinished(view, url)
-                    println("++++++++++onPageFinished+++++++++++")
-                    println(url)
+                view?.loadPage(newUrl)
+                return true
+            }
 
-                    // 강제 리다이렉션 대응
-                    val jsUaOverride = """
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                println("++++++++++onPageFinished+++++++++++")
+                println(url)
+
+                // 강제 리다이렉션 대응
+                val jsUaOverride = """
                             Object.defineProperty(navigator, 'userAgent', {
                                 get: function() { 
                                     return '$userAgent'; 
@@ -59,11 +47,11 @@ class WebCrawlerHelper(
                             });
                         """.trimIndent()
 
-                    webView.evaluateJavascript(jsUaOverride) { result ->
-                        println("++++++++++UA+++++++++++")
-                        println(result)
-                    }
-                    val jsCode = """
+                webView.evaluateJavascript(jsUaOverride) { result ->
+                    println("++++++++++UA+++++++++++")
+                    println(result)
+                }
+                val jsCode = """
                             const ulElement = document.querySelector('ul.prdList');
                             if (ulElement == null) return "";
                             
@@ -72,41 +60,45 @@ class WebCrawlerHelper(
                             return firstLi ? firstLi.id : "";
                         """.trimIndent()
 
-                    webView.evaluateJavascript("(function() {$jsCode; })();") {
-                        println("+++++evaluateJavascript+++++")
-                        println(it)
-                        println("+++++evaluateJavascript+++++")
-                        listener?.getTagId(it)
+                webView.evaluateJavascript("(function() {$jsCode; })();") {
+                    println("+++++evaluateJavascript+++++")
+                    println(it)
+                    println("+++++evaluateJavascript+++++")
 
-                        // TODO 로직 분리?
-                        val pref = SlackPreferenceWrapper(context)
-                        val existId = pref.getExistId()
-                        val newId = it.ifEmpty { existId }
+                    // TODO 로직 분리?
+                    val pref = SlackPreferenceWrapper(webView.context)
+                    val existId = pref.getExistId()
+                    val newId = it.ifEmpty { existId }
 
-                        when {
-                            existId.isEmpty() && newId.isNotEmpty() -> {
-                                // 최초 등록
-                                pref.setIsNewFlag(false)
-                                pref.setId(newId)
-                            }
-                            existId.isNotEmpty() && newId != existId -> {
-                                // 바뀔경우
-                                pref.setIsNewFlag(true)
-                                pref.setId(newId)
-                            }
-                            existId.isNotEmpty() && newId == existId -> {
-                                // 그대로
-                                pref.setIsNewFlag(false)
-                            }
+                    when {
+                        existId.isEmpty() && newId.isNotEmpty() -> {
+                            // 최초 등록
+                            pref.setIsNewFlag(false)
+                            pref.setId(newId)
+                        }
+                        existId.isNotEmpty() && newId != existId -> {
+                            // 바뀔경우
+                            pref.setIsNewFlag(true)
+                            pref.setId(newId)
+                        }
+                        existId.isNotEmpty() && newId == existId -> {
+                            // 그대로
+                            pref.setIsNewFlag(false)
                         }
                     }
+
+                    listener?.getTagId(it)
                 }
             }
-
-            webChromeClient = WebChromeClient()
-        }.also {
-            it.loadPage(url)
         }
+
+        return init(url, clientObj)
+    }
+
+    private fun init(
+        url: String,
+        clientObj: WebViewClient,
+    ): WebView = WebCrawler(webView, clientObj, url).init()
 
     interface CrawlerCallback {
         fun getTagId(id: String)
