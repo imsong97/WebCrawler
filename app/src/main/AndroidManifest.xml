@@ -30,6 +30,7 @@
         </activity>
 
         <receiver android:name=".components.TimeEventReceiver" android:exported="false" />
+        <receiver android:name=".components.BatteryChargeReceiver" android:exported="false" />
         <receiver
             android:name=".components.DeviceBootReceiver"
             android:enabled="true"
