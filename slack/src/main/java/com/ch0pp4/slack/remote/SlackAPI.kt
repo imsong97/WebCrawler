@@ -35,7 +35,7 @@ internal class SlackAPI {
             .baseUrl(BASEURL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
-            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+            .addCallAdapterFactory(RxJava2CallAdapterFactory.create()) // for RxJava
             .build()
 
         mAPI = mRetrofit.create(API::class.java)
@@ -60,5 +60,11 @@ internal class SlackAPI {
             @Path("hooksKey") key: String,
             @Body entity: SendSlackEntity
         ): Single<Response<ResponseBody>>
+
+        @POST("T07C8GL2B9A/B09M13F6F0D/{hooksKey}")
+        suspend fun sendSlackMessageCoroutine(
+            @Path("hooksKey") key: String,
+            @Body entity: SendSlackEntity
+        ): Response<ResponseBody>
     }
 }

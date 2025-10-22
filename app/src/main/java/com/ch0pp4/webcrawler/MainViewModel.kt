@@ -1,15 +1,17 @@
 package com.ch0pp4.webcrawler
 
-import android.util.Printer
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.ch0pp4.slack.SlackRepository
-import com.ch0pp4.slack.local.SlackPreferenceWrapper
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainViewModel(
     private val slackRepository: SlackRepository
@@ -38,6 +40,20 @@ class MainViewModel(
             }).also {
                 compositeDisposable.add(it)
             }
+    }
+
+    fun sendSlackMessageCoroutine(id: String) {
+        viewModelScope.launch { // Dispatchers.Main
+            withContext(Dispatchers.IO) {
+                try {
+                    slackRepository.sendSlackMessageCoroutine("++in app crawling : $id++")
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            setWebViewVisible(false)
+        }
     }
 
     override fun onCleared() {

@@ -76,7 +76,7 @@ fun CrawlingWebView(mainViewModel: MainViewModel) {
         factory = { context ->
             val listener = object : WebCrawlerHelper.CrawlerCallback {
                 override fun getTagId(id: String) {
-                    mainViewModel.sendSlackMessage(id)
+                    mainViewModel.sendSlackMessageCoroutine(id)
                 }
             }
             WebCrawlerHelper(listener = listener, webView = WebView(context)).initDameWeb()

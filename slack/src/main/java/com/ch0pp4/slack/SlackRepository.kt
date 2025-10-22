@@ -21,7 +21,7 @@ class SlackRepository {
     fun sendSlackMessage(text: String): Single<Boolean>? =
         SlackRemoteRepository.sendSlackMessage(SendSlackEntity(text = text), BuildConfig.HOOKS_KEY)
             ?.map {
-                it.body()?.string()
+                it.body()?.string() ?: ""
             }
             ?.map {
                 it == "ok"
@@ -30,4 +30,17 @@ class SlackRepository {
                 it.printStackTrace()
                 false
             }
+
+    suspend fun sendSlackMessageCoroutine(text: String): Boolean =
+        try {
+            val response = SlackRemoteRepository.sendSlackMessageCoroutine(
+                SendSlackEntity(text = text),
+                BuildConfig.HOOKS_KEY
+            )
+
+            response?.body()?.string() == "ok"
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
 }
