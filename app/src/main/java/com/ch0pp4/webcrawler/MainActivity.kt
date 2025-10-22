@@ -4,22 +4,40 @@ import android.os.Bundle
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.ch0pp4.slack.SlackRepository
 import com.ch0pp4.webcrawler.crawler.WebCrawlerHelper
 import com.ch0pp4.webcrawler.ui.theme.WebCrawlerTheme
+import com.ch0pp4.webcrawler.utils.VMProvider
 import com.ch0pp4.webcrawler.utils.loadPage
 
 class MainActivity : ComponentActivity() {
+
+    private val viewModel: MainViewModel by lazy {
+        val tempViewModel = MainViewModel(SlackRepository())
+        VMProvider(this@MainActivity, tempViewModel)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             WebCrawlerTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    DameWebView()
+                    MainView(viewModel)
                 }
             }
         }
@@ -27,14 +45,38 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun DameWebView() {
+fun MainView(mainViewModel: MainViewModel) {
+    val isVisible by mainViewModel.webViewVisible.collectAsState()
+
+    if (isVisible) {
+        CrawlingWebView(mainViewModel)
+    } else {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button(
+                onClick = {
+                    mainViewModel.setWebViewVisible(true)
+                },
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(text = stringResource(R.string.txt_start_crawling))
+            }
+        }
+    }
+}
+
+@Composable
+fun CrawlingWebView(mainViewModel: MainViewModel) {
     val url = "https://damestore.com/product/outlet.html?cate_no=141"
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { context ->
             val listener = object : WebCrawlerHelper.CrawlerCallback {
                 override fun getTagId(id: String) {
-
+                    mainViewModel.sendSlackMessage(id)
                 }
             }
             WebCrawlerHelper(listener = listener, webView = WebView(context)).initDameWeb()
