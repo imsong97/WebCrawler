@@ -47,6 +47,8 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.10.5")
     implementation ("androidx.work:work-rxjava2:2.10.5")
 
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
