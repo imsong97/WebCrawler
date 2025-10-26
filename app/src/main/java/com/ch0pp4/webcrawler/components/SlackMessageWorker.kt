@@ -2,65 +2,88 @@ package com.ch0pp4.webcrawler.components
 
 import android.content.Context
 import android.webkit.WebView
-import androidx.work.RxWorker
+import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.ch0pp4.slack.SlackRepository
 import com.ch0pp4.slack.local.SlackPreferenceWrapper
 import com.ch0pp4.webcrawler.crawler.WebCrawlerHelper
-import io.reactivex.Single
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.util.Calendar
-import kotlin.onSuccess
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.text.ifEmpty
 
 class SlackMessageWorker (
     private val context: Context,
     private val workerParameters: WorkerParameters
-) : RxWorker(context, workerParameters) {
+) : CoroutineWorker(context, workerParameters) {
 
-    override fun createWork(): Single<Result> =
+    private lateinit var webViewInstance: WebView
+
+    override suspend fun doWork(): Result {
         if (blockCrawling()) {
-            Single.just(Result.success())
-        } else {
-            Single.create { emitter ->
-                try {
-                    val listener = object : WebCrawlerHelper.CrawlerCallback {
-                        override fun getTagId(id: String) {
-                            emitter.onSuccess(id)
-                        }
-                    }
-                    WebCrawlerHelper(listener, WebView(context)).initDameWeb()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    emitter.onError(Throwable("Crawling Error"))
-                }
-            }.subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(Schedulers.io())
-            .map {
+            return Result.success()
+        }
+
+        try {
+            initCrawling()
+        } catch (e: Exception) {
+            sendSlackMessage(e.message ?: "")
+            e.printStackTrace()
+            return Result.failure()
+        }
+
+        val apiResult = try {
+            withContext(Dispatchers.IO) {
                 val pref = SlackPreferenceWrapper(context)
                 val isNew = pref.getIsNewFlag()
                 val id = pref.getExistId().ifEmpty { "value is empty" }
 
-                if (isNew) {
+                val text = if (isNew) {
                     "‼️New product is Detected‼️\n++new id : $id++"
                 } else {
                     "++same id : $id++"
                 }
+
+                sendSlackMessage(text)
             }
-            .onErrorReturn {
-                it.message
-            }
-            .flatMap {
-                SlackRepository.instance?.sendSlackMessage(it) ?: Single.just(false)
-            }
-            .map {
-                if (it) {
-                    Result.success()
-                } else {
-                    Result.failure()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            sendSlackMessage("API Failed: ${e.message ?: "Unknown Error"}")
+            false
+        }
+
+        return if (apiResult) Result.success() else Result.failure()
+    }
+
+    private suspend fun initCrawling() {
+        withContext(Dispatchers.Main) {
+            suspendCancellableCoroutine { continuation ->
+                try {
+                    val listener = object : WebCrawlerHelper.CrawlerCallback {
+                        override fun getTagId(id: String) {
+                            continuation.resume(id) // 콜백 후 코루틴 재개
+                        }
+                    }
+
+                    webViewInstance = WebCrawlerHelper(listener, WebView(context)).initDameWeb()
+
+                    continuation.invokeOnCancellation {
+                        destroyWebView()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    continuation.resumeWithException(e)
                 }
             }
+            destroyWebView()
         }
+    }
+
+    private suspend fun sendSlackMessage(text: String): Boolean =
+        SlackRepository.instance?.sendSlackMessageCoroutine(text) ?: false
 
     /**
      * 0~7시 대 타임 및 일요일 크롤링 block
@@ -71,5 +94,11 @@ class SlackMessageWorker (
         val day = calendar.get(Calendar.DAY_OF_WEEK)
 
         return (hour in 0..6) || day == Calendar.SUNDAY
+    }
+
+    private fun destroyWebView() {
+        if (::webViewInstance.isInitialized) {
+            webViewInstance.destroy()
+        }
     }
 }
