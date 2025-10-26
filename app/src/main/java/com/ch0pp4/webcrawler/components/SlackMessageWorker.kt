@@ -30,23 +30,29 @@ class SlackMessageWorker (
         try {
             initCrawling()
         } catch (e: Exception) {
-            destroyWebView()
             sendSlackMessage(e.message ?: "")
             e.printStackTrace()
+            return Result.failure()
         }
 
-        val apiResult = withContext(Dispatchers.IO) {
-            val pref = SlackPreferenceWrapper(context)
-            val isNew = pref.getIsNewFlag()
-            val id = pref.getExistId().ifEmpty { "value is empty" }
+        val apiResult = try {
+            withContext(Dispatchers.IO) {
+                val pref = SlackPreferenceWrapper(context)
+                val isNew = pref.getIsNewFlag()
+                val id = pref.getExistId().ifEmpty { "value is empty" }
 
-            val text = if (isNew) {
-                "‼️New product is Detected‼️\n++new id : $id++"
-            } else {
-                "++same id : $id++"
+                val text = if (isNew) {
+                    "‼️New product is Detected‼️\n++new id : $id++"
+                } else {
+                    "++same id : $id++"
+                }
+
+                sendSlackMessage(text)
             }
-
-            sendSlackMessage(text)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            sendSlackMessage("API Failed: ${e.message ?: "Unknown Error"}")
+            false
         }
 
         return if (apiResult) Result.success() else Result.failure()
@@ -58,7 +64,6 @@ class SlackMessageWorker (
                 try {
                     val listener = object : WebCrawlerHelper.CrawlerCallback {
                         override fun getTagId(id: String) {
-                            destroyWebView()
                             continuation.resume(id) // 콜백 후 코루틴 재개
                         }
                     }
@@ -70,9 +75,10 @@ class SlackMessageWorker (
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    continuation.resumeWithException(Throwable("Init Crawling Error"))
+                    continuation.resumeWithException(e)
                 }
             }
+            destroyWebView()
         }
     }
 
