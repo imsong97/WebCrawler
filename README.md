@@ -5,7 +5,8 @@ AlarmManager로 스케줄러 지정 -> Worker에서 WebView Crawling -> Slack AP
 <br><br>
 
 structure: Jetpack compose + MVVM <br>
-async: RxJava, Coroutine(전환중) <br>
+async: Coroutine, RxJava(previous) <br>
 schedule management: AlarmManager, BroadcastReceiver, Worker
+storage: SharedPreference, DataStore(전환중)
 <br><br>
 <img width="500" height="390" alt="Image" src="https://github.com/user-attachments/assets/e575ab26-10c9-4f9d-9c73-06b366de819e" />
