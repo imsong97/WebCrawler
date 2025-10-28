@@ -8,7 +8,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-internal val Context.slackDataStore by preferencesDataStore(name = "slack")
+private val Context.slackDataStore by preferencesDataStore(name = "slack")
 
 class SlackDatastoreWrapper(
     private val context: Context
