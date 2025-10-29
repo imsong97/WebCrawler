@@ -6,7 +6,6 @@ import android.content.SharedPreferences
 class SlackPreferenceWrapper(
     private val context: Context
 ) {
-    // TODO DataStore migration
 
     private val TAG_ID = "tag_id"
     private val IS_NEW = "is_new"

@@ -1,16 +1,21 @@
 package com.ch0pp4.webcrawler.crawler
 
-import android.annotation.SuppressLint
-import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import com.ch0pp4.slack.local.SlackPreferenceWrapper
+import com.ch0pp4.slack.local.SlackDatastoreWrapper
 import com.ch0pp4.webcrawler.utils.loadPage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class WebCrawlerHelper(
     private val listener: CrawlerCallback? = null,
-    private val webView: WebView
+    private val webView: WebView,
+    private val coroutineScope: CoroutineScope
 ) {
     private var isRedirect = false
 
@@ -61,33 +66,36 @@ class WebCrawlerHelper(
                         """.trimIndent()
 
                 webView.evaluateJavascript("(function() {$jsCode; })();") {
-                    println("+++++evaluateJavascript+++++")
-                    println(it)
-                    println("+++++evaluateJavascript+++++")
+                    coroutineScope.launch {
+                        println("+++++evaluateJavascript+++++")
+                        println(it)
+                        println("+++++evaluateJavascript+++++")
 
-                    // TODO 로직 분리?
-                    val pref = SlackPreferenceWrapper(webView.context)
-                    val existId = pref.getExistId()
-                    val newId = it.ifEmpty { existId }
+                        withContext(Dispatchers.IO) {
+                            val pref = SlackDatastoreWrapper(webView.context)
+                            val existId = pref.existId.catch { emit("") }.first()
+                            val newId = it.replace("\"", "").ifEmpty { existId }
 
-                    when {
-                        existId.isEmpty() && newId.isNotEmpty() -> {
-                            // 최초 등록
-                            pref.setIsNewFlag(false)
-                            pref.setId(newId)
+                            when {
+                                existId.isEmpty() && newId.isNotEmpty() -> {
+                                    // 최초 등록
+                                    pref.setIsNewFlag(false)
+                                    pref.setId(newId)
+                                }
+                                existId.isNotEmpty() && newId != existId -> {
+                                    // 바뀔경우
+                                    pref.setIsNewFlag(true)
+                                    pref.setId(newId)
+                                }
+                                existId.isNotEmpty() && newId == existId -> {
+                                    // 그대로
+                                    pref.setIsNewFlag(false)
+                                }
+                            }
                         }
-                        existId.isNotEmpty() && newId != existId -> {
-                            // 바뀔경우
-                            pref.setIsNewFlag(true)
-                            pref.setId(newId)
-                        }
-                        existId.isNotEmpty() && newId == existId -> {
-                            // 그대로
-                            pref.setIsNewFlag(false)
-                        }
+
+                        listener?.getTagId(it)
                     }
-
-                    listener?.getTagId(it)
                 }
             }
         }
