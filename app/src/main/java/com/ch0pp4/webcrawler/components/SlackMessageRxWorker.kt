@@ -10,6 +10,8 @@ import com.ch0pp4.webcrawler.crawler.WebCrawlerHelper
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import java.util.Calendar
 
 class SlackMessageRxWorker (
@@ -31,7 +33,8 @@ class SlackMessageRxWorker (
                             emitter.onSuccess(id)
                         }
                     }
-                    webViewInstance = WebCrawlerHelper(listener, WebView(context)).initDameWeb()
+                    webViewInstance = WebCrawlerHelper(listener, WebView(context), CoroutineScope(
+                        Dispatchers.Main)).initDameWeb()
                 } catch (e: Exception) {
                     e.printStackTrace()
                     destroyWebView()

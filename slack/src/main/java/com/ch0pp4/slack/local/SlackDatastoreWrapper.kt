@@ -15,26 +15,26 @@ class SlackDatastoreWrapper(
 ) {
     // https://developer.android.com/topic/libraries/architecture/datastore?hl=ko#prefs-vs-proto
 
-    private val TAG_ID = stringPreferencesKey("tag_id")
-    private val IS_NEW = booleanPreferencesKey("is_new")
+    private val DAME_PRODUCT_ID = stringPreferencesKey("dame_product_id")
+    private val IS_NEW_DAME = booleanPreferencesKey("is_new_dame")
 
     val existId: Flow<String> = context.slackDataStore.data.map { pref ->
-        pref[TAG_ID] ?: ""
+        pref[DAME_PRODUCT_ID] ?: ""
     }
 
     suspend fun setId(id: String) {
         context.slackDataStore.edit { pref ->
-            pref[TAG_ID] = id
+            pref[DAME_PRODUCT_ID] = id
         }
     }
 
     val isNewFlag: Flow<Boolean> = context.slackDataStore.data.map { pref ->
-        pref[IS_NEW] ?: false
+        pref[IS_NEW_DAME] ?: false
     }
 
     suspend fun setIsNewFlag(value: Boolean) {
         context.slackDataStore.edit { pref ->
-            pref[IS_NEW] = value
+            pref[IS_NEW_DAME] = value
         }
     }
 }

@@ -5,9 +5,13 @@ import android.webkit.WebView
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.ch0pp4.slack.SlackRepository
-import com.ch0pp4.slack.local.SlackPreferenceWrapper
+import com.ch0pp4.slack.local.SlackDatastoreWrapper
 import com.ch0pp4.webcrawler.crawler.WebCrawlerHelper
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.util.Calendar
@@ -17,10 +21,11 @@ import kotlin.text.ifEmpty
 
 class SlackMessageWorker (
     private val context: Context,
-    private val workerParameters: WorkerParameters
+    workerParameters: WorkerParameters
 ) : CoroutineWorker(context, workerParameters) {
 
     private lateinit var webViewInstance: WebView
+    private val coroutineScope = CoroutineScope(Dispatchers.Main)
 
     override suspend fun doWork(): Result {
         if (blockCrawling()) {
@@ -37,9 +42,9 @@ class SlackMessageWorker (
 
         val apiResult = try {
             withContext(Dispatchers.IO) {
-                val pref = SlackPreferenceWrapper(context)
-                val isNew = pref.getIsNewFlag()
-                val id = pref.getExistId().ifEmpty { "value is empty" }
+                val pref = SlackDatastoreWrapper(context)
+                val isNew = pref.isNewFlag.catch { emit(false) }.first()
+                val id = pref.existId.catch { emit("") }.first().ifEmpty { "value is empty" }
 
                 val text = if (isNew) {
                     "‼️New product is Detected‼️\n++new id : $id++"
@@ -68,17 +73,21 @@ class SlackMessageWorker (
                         }
                     }
 
-                    webViewInstance = WebCrawlerHelper(listener, WebView(context)).initDameWeb()
+                    webViewInstance = WebCrawlerHelper(
+                        listener,
+                        WebView(context),
+                        coroutineScope
+                    ).initDameWeb()
 
                     continuation.invokeOnCancellation {
-                        destroyWebView()
+                        destroyComponents()
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
                     continuation.resumeWithException(e)
                 }
             }
-            destroyWebView()
+            destroyComponents()
         }
     }
 
@@ -96,7 +105,8 @@ class SlackMessageWorker (
         return (hour in 0..6) || day == Calendar.SUNDAY
     }
 
-    private fun destroyWebView() {
+    private fun destroyComponents() {
+        coroutineScope.cancel()
         if (::webViewInstance.isInitialized) {
             webViewInstance.destroy()
         }

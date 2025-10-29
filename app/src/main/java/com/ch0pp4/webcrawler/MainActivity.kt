@@ -19,11 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.lifecycleScope
 import com.ch0pp4.slack.SlackRepository
 import com.ch0pp4.webcrawler.crawler.WebCrawlerHelper
 import com.ch0pp4.webcrawler.ui.theme.WebCrawlerTheme
 import com.ch0pp4.webcrawler.utils.VMProvider
 import com.ch0pp4.webcrawler.utils.loadPage
+import kotlinx.coroutines.CoroutineScope
 
 class MainActivity : ComponentActivity() {
 
@@ -37,7 +39,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             WebCrawlerTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    MainView(viewModel)
+                    MainView(viewModel, lifecycleScope)
                 }
             }
         }
@@ -45,11 +47,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainView(mainViewModel: MainViewModel) {
+fun MainView(mainViewModel: MainViewModel, coroutineScope: CoroutineScope) {
     val isVisible by mainViewModel.webViewVisible.collectAsState()
 
     if (isVisible) {
-        CrawlingWebView(mainViewModel)
+        CrawlingWebView(mainViewModel, coroutineScope)
     } else {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -69,7 +71,7 @@ fun MainView(mainViewModel: MainViewModel) {
 }
 
 @Composable
-fun CrawlingWebView(mainViewModel: MainViewModel) {
+fun CrawlingWebView(mainViewModel: MainViewModel, coroutineScope: CoroutineScope) {
     val url = "https://damestore.com/product/outlet.html?cate_no=141"
     AndroidView(
         modifier = Modifier.fillMaxSize(),
@@ -79,7 +81,7 @@ fun CrawlingWebView(mainViewModel: MainViewModel) {
                     mainViewModel.sendSlackMessageCoroutine(id)
                 }
             }
-            WebCrawlerHelper(listener = listener, webView = WebView(context)).initDameWeb()
+            WebCrawlerHelper(listener = listener, webView = WebView(context), coroutineScope).initDameWeb()
         },
         update = { webView ->
             if (webView.url != url) {
