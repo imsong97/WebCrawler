@@ -30,7 +30,7 @@ import kotlinx.coroutines.CoroutineScope
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by lazy {
-        val tempViewModel = MainViewModel(SlackRepository())
+        val tempViewModel = MainViewModel(SlackRepository.getInstance())
         VMProvider(this@MainActivity, tempViewModel)
     }
 

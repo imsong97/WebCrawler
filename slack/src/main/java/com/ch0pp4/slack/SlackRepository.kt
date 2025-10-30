@@ -3,19 +3,26 @@ package com.ch0pp4.slack
 import com.ch0pp4.slack.remote.SendSlackEntity
 import com.ch0pp4.slack.remote.SlackRemoteRepository
 import io.reactivex.Single
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlin.printStackTrace
 
-class SlackRepository {
+class SlackRepository(
+    private val defaultDispatcher: CoroutineDispatcher
+) {
 
     companion object {
         @Volatile
         private var mInstance: SlackRepository? = null
-        val instance: SlackRepository?
-            get() = synchronized(SlackRepository::class.java) {
+        fun getInstance(defaultDispatcher: CoroutineDispatcher = Dispatchers.IO): SlackRepository {
+            synchronized(SlackRepository::class.java) {
                 if (mInstance == null) {
-                    mInstance = SlackRepository()
+                    mInstance = SlackRepository(defaultDispatcher)
                 }
-                return mInstance
+                return mInstance!!
             }
+        }
     }
 
     fun sendSlackMessage(text: String): Single<Boolean>? =
@@ -32,15 +39,17 @@ class SlackRepository {
             }
 
     suspend fun sendSlackMessageCoroutine(text: String): Boolean =
-        try {
-            val response = SlackRemoteRepository.sendSlackMessageCoroutine(
-                SendSlackEntity(text = text),
-                BuildConfig.HOOKS_KEY
-            )
+        withContext(defaultDispatcher) {
+            try {
+                val response = SlackRemoteRepository.sendSlackMessageCoroutine(
+                    SendSlackEntity(text = text),
+                    BuildConfig.HOOKS_KEY
+                )
 
-            response?.body()?.string() == "ok"
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
+                response?.body()?.string() == "ok"
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
         }
 }

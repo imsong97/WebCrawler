@@ -44,14 +44,7 @@ class MainViewModel(
 
     fun sendSlackMessageCoroutine(id: String) {
         viewModelScope.launch { // Dispatchers.Main
-            withContext(Dispatchers.IO) {
-                try {
-                    slackRepository.sendSlackMessageCoroutine("++in app crawling : $id++")
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-
+            slackRepository.sendSlackMessageCoroutine("++in app crawling : $id++")
             setWebViewVisible(false)
         }
     }

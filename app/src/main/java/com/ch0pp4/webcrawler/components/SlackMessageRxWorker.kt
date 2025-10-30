@@ -57,7 +57,7 @@ class SlackMessageRxWorker (
                 it.message
             }
             .flatMap {
-                SlackRepository.instance?.sendSlackMessage(it) ?: Single.just(false)
+                SlackRepository.getInstance()?.sendSlackMessage(it) ?: Single.just(false)
             }
             .map {
                 if (it) {

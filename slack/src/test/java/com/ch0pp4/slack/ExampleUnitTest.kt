@@ -18,7 +18,7 @@ class ExampleUnitTest {
 
     @Test
     fun sendSlackMessageTest() {
-        val result = SlackRepository.instance
+        val result = SlackRepository.getInstance()
             ?.sendSlackMessage("Test message from instrumented test")
             ?.subscribeOn(Schedulers.io())
             ?.blockingGet()

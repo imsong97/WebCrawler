@@ -41,19 +41,19 @@ class SlackMessageWorker (
         }
 
         val apiResult = try {
-            withContext(Dispatchers.IO) {
+            val text = withContext(Dispatchers.IO) {
                 val pref = SlackDatastoreWrapper(context)
                 val isNew = pref.isNewFlag.catch { emit(false) }.first()
                 val id = pref.existId.catch { emit("") }.first().ifEmpty { "value is empty" }
 
-                val text = if (isNew) {
+                if (isNew) {
                     "‼️New product is Detected‼️\n++new id : $id++"
                 } else {
                     "++same id : $id++"
                 }
-
-                sendSlackMessage(text)
             }
+
+            sendSlackMessage(text)
         } catch (e: Exception) {
             e.printStackTrace()
             sendSlackMessage("API Failed: ${e.message ?: "Unknown Error"}")
@@ -92,7 +92,7 @@ class SlackMessageWorker (
     }
 
     private suspend fun sendSlackMessage(text: String): Boolean =
-        SlackRepository.instance?.sendSlackMessageCoroutine(text) ?: false
+        SlackRepository.getInstance()?.sendSlackMessageCoroutine(text) ?: false
 
     /**
      * 0~7시 대 타임 및 일요일 크롤링 block
