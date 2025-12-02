@@ -2,4 +2,6 @@
     <string name="app_name">WebCrawler</string>
 
     <string name="txt_start_crawling">start crawling</string>
+    <string name="txt_cancel_worker">cancel crawling worker</string>
+    <string name="txt_init_worker">init crawling worker</string>
 </resources>

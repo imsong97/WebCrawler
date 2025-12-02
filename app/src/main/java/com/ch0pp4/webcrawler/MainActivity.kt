@@ -2,6 +2,7 @@ package com.ch0pp4.webcrawler
 
 import android.os.Bundle
 import android.webkit.WebView
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -49,6 +51,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainView(mainViewModel: MainViewModel, coroutineScope: CoroutineScope) {
     val isVisible by mainViewModel.webViewVisible.collectAsState()
+    val context = LocalContext.current
 
     if (isVisible) {
         CrawlingWebView(mainViewModel, coroutineScope)
@@ -58,6 +61,24 @@ fun MainView(mainViewModel: MainViewModel, coroutineScope: CoroutineScope) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Button(
+                onClick = {
+                    (context.applicationContext as WebCrawlerApplication).setAlarmManager()
+                    Toast.makeText(context, "Start", Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(text = stringResource(R.string.txt_init_worker))
+            }
+            Button(
+                onClick = {
+                    (context.applicationContext as WebCrawlerApplication).cancelAlarmManager()
+                    Toast.makeText(context, "Cancel", Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(text = stringResource(R.string.txt_cancel_worker))
+            }
             Button(
                 onClick = {
                     mainViewModel.setWebViewVisible(true)
