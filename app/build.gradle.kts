@@ -41,6 +41,7 @@ android {
 
 dependencies {
     implementation(project(":slack"))
+    implementation(project(":data"))
     implementation("io.reactivex.rxjava2:rxjava:2.2.21")
     implementation("io.reactivex.rxjava2:rxandroid:2.1.1")
 

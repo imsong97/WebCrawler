@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 rootProject.name = "WebCrawler"
 include(":app")
 include(":slack")
+include(":data")
