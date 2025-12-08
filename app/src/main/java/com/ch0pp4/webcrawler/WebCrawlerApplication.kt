@@ -9,12 +9,18 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import com.ch0pp4.webcrawler.components.TimeEventReceiver
+import com.ch0pp4.webcrawler.di.AppContainer
 import java.util.Calendar
 
 class WebCrawlerApplication : Application() {
 
+    companion object {
+        lateinit var appContainer: AppContainer
+    }
+
     override fun onCreate() {
         super.onCreate()
+        appContainer = AppContainer(applicationContext)
     }
 
     @SuppressLint("ScheduleExactAlarm")
