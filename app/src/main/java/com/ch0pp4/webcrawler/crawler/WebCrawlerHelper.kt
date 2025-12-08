@@ -3,8 +3,8 @@ package com.ch0pp4.webcrawler.crawler
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import com.ch0pp4.slack.local.SlackDatastoreWrapper
 import com.ch0pp4.webcrawler.utils.loadPage
+import com.ch0pp4.webcrawler.WebCrawlerApplication.Companion.appContainer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
@@ -72,7 +72,7 @@ class WebCrawlerHelper(
                         println("+++++evaluateJavascript+++++")
 
                         withContext(Dispatchers.IO) {
-                            val pref = SlackDatastoreWrapper(webView.context)
+                            val pref = appContainer.appDataStore
                             val existId = pref.existId.catch { emit("") }.first()
                             val newId = it.replace("\"", "").ifEmpty { existId }
 
