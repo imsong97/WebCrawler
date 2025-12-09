@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import com.ch0pp4.data.WebCrawlerDataRepository
+import com.ch0pp4.data.WebCrawlerRepository
 import com.ch0pp4.data.local.AppDataStore
 import com.ch0pp4.webcrawler.MainViewModel
 
@@ -13,11 +14,11 @@ class AppContainer(
 ) {
     // data
     val appDataStore = AppDataStore(context)
-    val webCrawlerDataRepository = WebCrawlerDataRepository()
+    val webCrawlerDataRepository: WebCrawlerRepository = WebCrawlerDataRepository()
 
     // presentation
     val mainViewModel: (viewModelStoreOwner: ViewModelStoreOwner) -> MainViewModel = { owner ->
-        val tempViewModel = MainViewModel(webCrawlerDataRepository)
+        val tempViewModel = MainViewModel(webCrawlerDataRepository, appDataStore)
         VMProvider(owner, tempViewModel)
     }
 
