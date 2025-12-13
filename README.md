@@ -4,7 +4,7 @@
 AlarmManager로 스케줄러 지정 -> Worker에서 WebView Crawling -> Slack API로 Message 보내기
 <br><br>
 
-structure: Jetpack compose + MVVM <br>
+structure: Jetpack compose + MVVM, Data Layer <br>
 async: Coroutine, RxJava(previous) <br>
 schedule management: AlarmManager, BroadcastReceiver, Worker <br>
 storage: DataStore, SharedPreference(previous)
