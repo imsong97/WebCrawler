@@ -3,5 +3,8 @@
 
     <string name="txt_start_crawling">start crawling</string>
     <string name="txt_cancel_worker">cancel crawling worker</string>
-    <string name="txt_init_worker">init crawling worker</string>
+    <string name="txt_init_worker_30_minute">init crawling worker with 30m</string>
+    <string name="txt_init_worker_60_minute">init crawling worker with 60m</string>
+    <string name="toast_init_worker_30_minute">Start with 30 minute</string>
+    <string name="toast_init_worker_60_minute">Start with 60 minute</string>
 </resources>

@@ -1,7 +1,6 @@
 package com.ch0pp4.data
 
 import com.ch0pp4.data.datasource.SlackRemoteDataSource
-import com.ch0pp4.data.local.AppDataStore
 import com.ch0pp4.data.remote.SendSlackEntity
 import com.ch0pp4.data.remote.SlackRemoteRepository
 import kotlinx.coroutines.CoroutineDispatcher

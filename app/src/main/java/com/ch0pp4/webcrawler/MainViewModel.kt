@@ -5,9 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.ch0pp4.data.WebCrawlerRepository
 import com.ch0pp4.data.local.AppDataStore
 import io.reactivex.disposables.CompositeDisposable
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainViewModel(
     private val crawlerRepository: WebCrawlerRepository,
@@ -15,6 +17,7 @@ class MainViewModel(
 ) : ViewModel() {
 
     private val compositeDisposable = CompositeDisposable()
+
     private val _webViewVisible = MutableStateFlow(false)
     val webViewVisible: StateFlow<Boolean> = _webViewVisible
 
@@ -46,8 +49,8 @@ class MainViewModel(
         }
     }
 
-    fun setCrawlingCycle(minute: Int) {
-        viewModelScope.launch {
+    suspend fun setCrawlingCycle(minute: Int) {
+        withContext(Dispatchers.IO) {
             appDataStore.setWorkerTerm(minute)
         }
     }

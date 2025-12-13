@@ -8,13 +8,18 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import com.ch0pp4.webcrawler.components.TimeEventReceiver
+import com.ch0pp4.webcrawler.components.receiver.TimeEventReceiver
 import com.ch0pp4.webcrawler.di.AppContainer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import java.util.Calendar
 
 class WebCrawlerApplication : Application() {
 
     companion object {
+        @SuppressLint("StaticFieldLeak")
         lateinit var appContainer: AppContainer
     }
 
@@ -24,29 +29,15 @@ class WebCrawlerApplication : Application() {
     }
 
     @SuppressLint("ScheduleExactAlarm")
-    fun setAlarmManager() {
+    suspend fun setAlarmManager() {
         Log.e("WebCrawlerApplication", "++setAlarmManager++")
 
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = getDameWebIntent()
         val pendingIntent = getPendingIntent(intent)
 
-        val calendar = Calendar.getInstance().apply {
-            val minute = get(Calendar.MINUTE)
-
-            if (minute < 30) {
-                set(Calendar.MINUTE, 30)
-            } else {
-                add(Calendar.HOUR_OF_DAY, 1)
-                set(Calendar.MINUTE, 0)
-            }
-//            add(Calendar.MINUTE, 1)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-
 //        alarmManager.cancel(pendingIntent)
-        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, getTriggerTime().timeInMillis, pendingIntent)
     }
 
     fun cancelAlarmManager() {
@@ -54,6 +45,52 @@ class WebCrawlerApplication : Application() {
         val i = getDameWebIntent()
         val pendingIntent = getPendingIntent(i)
         (getSystemService(Context.ALARM_SERVICE) as AlarmManager).cancel(pendingIntent)
+    }
+
+    private suspend fun getTriggerTime(): Calendar {
+        val term = withContext(Dispatchers.IO){
+            appContainer.appDataStore.workerTerm.catch { emit(-1) }.first()
+        }
+
+        val calendar = Calendar.getInstance().apply {
+            when (term) {
+                30 -> {
+                    val minute = get(Calendar.MINUTE)
+
+                    if (minute < 30) {
+                        this@apply.set(Calendar.MINUTE, 30)
+                    } else {
+                        this@apply.add(Calendar.HOUR_OF_DAY, 1)
+                        this@apply.set(Calendar.MINUTE, 0)
+                    }
+//                    this@apply.add(Calendar.MINUTE, 1)
+                    this@apply.set(Calendar.SECOND, 0)
+                    this@apply.set(Calendar.MILLISECOND, 0)
+                }
+                60 -> {
+                    this@apply.add(Calendar.HOUR_OF_DAY, 1)
+                    this@apply.set(Calendar.MINUTE, 0)
+                    this@apply.set(Calendar.SECOND, 0)
+                    this@apply.set(Calendar.MILLISECOND, 0)
+                }
+                else -> { // default 30m
+                    val minute = get(Calendar.MINUTE)
+
+                    if (minute < 30) {
+                        this@apply.set(Calendar.MINUTE, 30)
+                    } else {
+                        this@apply.add(Calendar.HOUR_OF_DAY, 1)
+                        this@apply.set(Calendar.MINUTE, 0)
+                    }
+//                    add(Calendar.MINUTE, 1)
+                    this@apply.set(Calendar.SECOND, 0)
+                    this@apply.set(Calendar.MILLISECOND, 0)
+                }
+            }
+
+        }
+
+        return calendar
     }
 
     private fun getDameWebIntent(): Intent = Intent(this@WebCrawlerApplication, TimeEventReceiver::class.java).apply {

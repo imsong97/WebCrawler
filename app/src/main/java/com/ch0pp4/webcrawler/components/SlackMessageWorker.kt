@@ -4,9 +4,8 @@ import android.content.Context
 import android.webkit.WebView
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.ch0pp4.slack.SlackRepository
-import com.ch0pp4.slack.local.SlackDatastoreWrapper
 import com.ch0pp4.webcrawler.crawler.WebCrawlerHelper
+import com.ch0pp4.webcrawler.di.AppContainer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -25,7 +24,10 @@ class SlackMessageWorker (
 ) : CoroutineWorker(context, workerParameters) {
 
     private lateinit var webViewInstance: WebView
-    private val coroutineScope = CoroutineScope(Dispatchers.Main)
+    private val coroutineMainScope = CoroutineScope(Dispatchers.Main)
+    private val appContainer by lazy {
+        AppContainer(this@SlackMessageWorker.context.applicationContext)
+    }
 
     override suspend fun doWork(): Result {
         if (blockCrawling()) {
@@ -42,7 +44,7 @@ class SlackMessageWorker (
 
         val apiResult = try {
             val text = withContext(Dispatchers.IO) {
-                val pref = SlackDatastoreWrapper(context)
+                val pref = appContainer.appDataStore
                 val isNew = pref.isNewFlag.catch { emit(false) }.first()
                 val id = pref.existId.catch { emit("") }.first().ifEmpty { "value is empty" }
 
@@ -76,7 +78,7 @@ class SlackMessageWorker (
                     webViewInstance = WebCrawlerHelper(
                         listener,
                         WebView(context),
-                        coroutineScope
+                        coroutineMainScope
                     ).initDameWeb()
 
                     continuation.invokeOnCancellation {
@@ -92,7 +94,7 @@ class SlackMessageWorker (
     }
 
     private suspend fun sendSlackMessage(text: String): Boolean =
-        SlackRepository.getInstance()?.sendSlackMessageCoroutine(text) ?: false
+        appContainer.webCrawlerDataRepository.sendSlackMessageCoroutine(text)
 
     /**
      * 0~7시 대 타임 및 일요일 크롤링 block
@@ -106,7 +108,7 @@ class SlackMessageWorker (
     }
 
     private fun destroyComponents() {
-        coroutineScope.cancel()
+        coroutineMainScope.cancel()
         if (::webViewInstance.isInitialized) {
             webViewInstance.destroy()
         }
