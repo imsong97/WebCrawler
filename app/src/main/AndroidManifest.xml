@@ -29,10 +29,10 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".components.TimeEventReceiver" android:exported="false" />
-        <receiver android:name=".components.BatteryChargeReceiver" android:exported="false" />
+        <receiver android:name=".components.receiver.TimeEventReceiver" android:exported="false" />
+        <receiver android:name=".components.receiver.BatteryChargeReceiver" android:exported="false" />
         <receiver
-            android:name=".components.DeviceBootReceiver"
+            android:name=".components.receiver.DeviceBootReceiver"
             android:enabled="true"
             android:exported="false">
             <intent-filter>

@@ -1,6 +1,5 @@
-package com.ch0pp4.webcrawler.components
+package com.ch0pp4.webcrawler.components.receiver
 
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -8,12 +7,14 @@ import android.os.BatteryManager
 import android.util.Log
 import com.ch0pp4.webcrawler.WebCrawlerApplication
 
-class BatteryChargeReceiver : BroadcastReceiver() {
+class BatteryChargeReceiver : BaseBroadCastReceiver() {
 
     override fun onReceive(context: Context?, intent: Intent?) {
         Log.e("BatteryChargeReceiver", "++onReceive++")
-        if (isCharging(context)) {
-            (context?.applicationContext as? WebCrawlerApplication)?.setAlarmManager()
+        if (context == null || !isCharging(context)) return
+
+        receiverScope.launchWithPendingIntent {
+            (context.applicationContext as WebCrawlerApplication).setAlarmManager()
         }
     }
 

@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.ch0pp4.webcrawler.MainViewModel
@@ -23,6 +24,7 @@ import com.ch0pp4.webcrawler.WebCrawlerApplication
 import com.ch0pp4.webcrawler.crawler.WebCrawlerHelper
 import com.ch0pp4.webcrawler.utils.loadPage
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -40,12 +42,29 @@ fun MainView(mainViewModel: MainViewModel, coroutineScope: CoroutineScope) {
         ) {
             Button(
                 onClick = {
-                    (context.applicationContext as WebCrawlerApplication).setAlarmManager()
-                    Toast.makeText(context, "Start", Toast.LENGTH_SHORT).show()
+                    coroutineScope.launch {
+                        (context.applicationContext as WebCrawlerApplication).cancelAlarmManager()
+                        (context.applicationContext as WebCrawlerApplication).setAlarmManager()
+                        mainViewModel.setCrawlingCycle(30)
+                        Toast.makeText(context, "Start with 30 minute", Toast.LENGTH_SHORT).show()
+                    }
                 },
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text(text = stringResource(R.string.txt_init_worker))
+                Text(text = stringResource(R.string.txt_init_worker_30_minute))
+            }
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        (context.applicationContext as WebCrawlerApplication).cancelAlarmManager()
+                        (context.applicationContext as WebCrawlerApplication).setAlarmManager()
+                        mainViewModel.setCrawlingCycle(60)
+                        Toast.makeText(context, "Start with 60 minute", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(text = stringResource(R.string.txt_init_worker_60_minute))
             }
             Button(
                 onClick = {
